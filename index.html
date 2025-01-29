@@ -99,7 +99,11 @@
 
     <script>
         let currentUser = null;
-        let projectData = {};
+        let projectData = {
+            supplier1: [],
+            supplier2: [],
+            supplier3: []
+        };
         let supplierData = {};
 
         function login() {
@@ -134,10 +138,13 @@
         function assignProject() {
             const supplier = document.getElementById('adminSupplierSelect').value;
             const projectNumber = document.getElementById('projectNumber').value;
-            if (!projectData[supplier]) projectData[supplier] = [];
-            projectData[supplier].push(projectNumber);
-            alert(`Project ${projectNumber} assigned to ${supplier}`);
-            displayAllData();
+            if (!projectData[supplier].includes(projectNumber)) {
+                projectData[supplier].push(projectNumber);
+                alert(`Project ${projectNumber} assigned to ${supplier}`);
+                displayAllData();
+            } else {
+                alert(`Project ${projectNumber} is already assigned to ${supplier}`);
+            }
         }
 
         function loadProjects() {
@@ -211,7 +218,7 @@
 
         function clearData() {
             const supplier = document.getElementById('adminSupplierSelect').value;
-            delete projectData[supplier];
+            projectData[supplier] = [];
             delete supplierData[supplier];
             alert(`Data cleared for ${supplier}`);
             displayAllData();

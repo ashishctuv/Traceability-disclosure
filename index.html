@@ -5,54 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Supplier Management System</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            line-height: 1.6;
-            margin: 0;
-            padding: 20px;
-            background-color: #f4f4f4;
-        }
-        .container {
-            max-width: 800px;
-            margin: auto;
-            background: #fff;
-            padding: 20px;
-            border-radius: 5px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
-        }
-        h1, h2 {
-            color: #333;
-        }
-        input, select, button {
-            display: block;
-            width: 100%;
-            padding: 10px;
-            margin-bottom: 10px;
-        }
-        button {
-            background: #c0a468;
-            color: #fff;
-            border: none;
-            cursor: pointer;
-        }
-        button:hover {
-            background: #edd38e;
-        }
-        #adminInterface, #supplierInterface {
-            display: none;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        th, td {
-            border: 1px solid #ddd;
-            padding: 8px;
-            text-align: left;
-        }
-        th {
-            background-color: #f2f2f2;
-        }
+        body { font-family: Arial, sans-serif; line-height: 1.6; margin: 0; padding: 20px; background-color: #f4f4f4; }
+        .container { max-width: 800px; margin: auto; background: #fff; padding: 20px; border-radius: 5px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        h1, h2 { color: #333; }
+        input, select, button { display: block; width: 100%; padding: 10px; margin-bottom: 10px; }
+        button { background: #c0a468; color: #fff; border: none; cursor: pointer; }
+        button:hover { background: #edd38e; }
+        #adminInterface, #supplierInterface { display: none; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
     </style>
 </head>
 <body>
@@ -98,13 +60,10 @@
     </div>
 
     <script>
+        const API_KEY = $2a$10$y18/2eS7AOLyfMUSvOIxeeR308qV4wEVgRhg0L1JETHB4oXpTOz8W
+        const BIN_ID = 6799f749e41b4d34e4809059
         let currentUser = null;
-        let projectData = {
-            supplier1: [],
-            supplier2: [],
-            supplier3: []
-        };
-        let supplierData = {};
+        let allData = { projectData: {}, supplierData: {} };
 
         function login() {
             const username = document.getElementById('username').value;
@@ -113,11 +72,11 @@
             if (username === 'admin' && password === 'admin123') {
                 currentUser = 'admin';
                 showInterface('adminInterface');
-                displayAllData();
+                loadData();
             } else if (['supplier1', 'supplier2', 'supplier3'].includes(username) && password === 'supplier123') {
                 currentUser = username;
                 showInterface('supplierInterface');
-                loadProjects();
+                loadData();
             } else {
                 alert('Invalid credentials');
             }
@@ -135,11 +94,45 @@
             document.getElementById(interfaceId).style.display = 'block';
         }
 
+        function loadData() {
+            fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}/latest`, {
+                headers: {
+                    'X-Master-Key': API_KEY
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                allData = data.record;
+                if (currentUser === 'admin') {
+                    displayAllData();
+                } else {
+                    loadProjects();
+                }
+            });
+        }
+
+        function saveData() {
+            fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Master-Key': API_KEY
+                },
+                body: JSON.stringify(allData)
+            });
+        }
+
         function assignProject() {
             const supplier = document.getElementById('adminSupplierSelect').value;
             const projectNumber = document.getElementById('projectNumber').value;
-            if (!projectData[supplier].includes(projectNumber)) {
-                projectData[supplier].push(projectNumber);
+            
+            if (!allData.projectData[supplier]) {
+                allData.projectData[supplier] = [];
+            }
+            
+            if (!allData.projectData[supplier].includes(projectNumber)) {
+                allData.projectData[supplier].push(projectNumber);
+                saveData();
                 alert(`Project ${projectNumber} assigned to ${supplier}`);
                 displayAllData();
             } else {
@@ -148,16 +141,15 @@
         }
 
         function loadProjects() {
+            const projects = allData.projectData[currentUser] || [];
             const select = document.getElementById('projectSelect');
             select.innerHTML = '';
-            if (projectData[currentUser]) {
-                projectData[currentUser].forEach(project => {
-                    const option = document.createElement('option');
-                    option.value = project;
-                    option.textContent = project;
-                    select.appendChild(option);
-                });
-            }
+            projects.forEach(project => {
+                const option = document.createElement('option');
+                option.value = project;
+                option.textContent = project;
+                select.appendChild(option);
+            });
         }
 
         function submitData() {
@@ -165,21 +157,21 @@
             const wpu = document.getElementById('wpu').value;
             const processSteps = Array.from(document.getElementById('processSteps').selectedOptions).map(option => option.value);
             
-            if (!supplierData[currentUser]) supplierData[currentUser] = {};
-            supplierData[currentUser][project] = { wpu, processSteps };
+            if (!allData.supplierData[currentUser]) {
+                allData.supplierData[currentUser] = {};
+            }
             
+            allData.supplierData[currentUser][project] = { wpu, processSteps };
+            saveData();
             alert(`Data submitted for project ${project}`);
-            displayAllData();
         }
 
         function displayAllData() {
-            if (currentUser !== 'admin') return;
-
             let html = '<table><tr><th>Supplier</th><th>Project</th><th>WPU</th><th>Process Steps</th></tr>';
             
-            for (let supplier in supplierData) {
-                for (let project in supplierData[supplier]) {
-                    const data = supplierData[supplier][project];
+            for (let supplier in allData.supplierData) {
+                for (let project in allData.supplierData[supplier]) {
+                    const data = allData.supplierData[supplier][project];
                     html += `<tr>
                         <td>${supplier}</td>
                         <td>${project}</td>
@@ -196,9 +188,9 @@
         function downloadData() {
             let csv = 'Supplier,Project,WPU,Process Steps\n';
             
-            for (let supplier in supplierData) {
-                for (let project in supplierData[supplier]) {
-                    const data = supplierData[supplier][project];
+            for (let supplier in allData.supplierData) {
+                for (let project in allData.supplierData[supplier]) {
+                    const data = allData.supplierData[supplier][project];
                     csv += `${supplier},${project},${data.wpu},"${data.processSteps.join(', ')}"\n`;
                 }
             }
@@ -218,8 +210,9 @@
 
         function clearData() {
             const supplier = document.getElementById('adminSupplierSelect').value;
-            projectData[supplier] = [];
-            delete supplierData[supplier];
+            delete allData.projectData[supplier];
+            delete allData.supplierData[supplier];
+            saveData();
             alert(`Data cleared for ${supplier}`);
             displayAllData();
         }

@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Supplier Management System</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            background: #fff;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        h1, h2 {
+            color: #333;
+        }
+        input, select, button {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+        button {
+            background: #c0a468;
+            color: #fff;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #edd38e;
+        }
+        #adminInterface, #supplierInterface {
+            display: none;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Supplier Management System</h1>
+        
+        <div id="loginForm">
+            <h2>Login</h2>
+            <input type="text" id="username" placeholder="Username">
+            <input type="password" id="password" placeholder="Password">
+            <button onclick="login()">Login</button>
+        </div>
+
+        <div id="adminInterface">
+            <h2>Admin Interface</h2>
+            <select id="adminSupplierSelect">
+                <option value="supplier1">Supplier 1</option>
+                <option value="supplier2">Supplier 2</option>
+                <option value="supplier3">Supplier 3</option>
+            </select>
+            <input type="text" id="projectNumber" placeholder="Project Number">
+            <button onclick="assignProject()">Assign Project</button>
+            <button onclick="downloadData()">Download Data</button>
+            <button onclick="clearData()">Clear Data</button>
+            <button onclick="logout()">Logout</button>
+            <h3>All Data</h3>
+            <div id="allData"></div>
+        </div>
+
+        <div id="supplierInterface">
+            <h2>Supplier Interface</h2>
+            <select id="projectSelect"></select>
+            <input type="text" id="wpu" placeholder="What is the name of WPU?">
+            <select id="processSteps" multiple>
+                <option value="dyeing">Dyeing</option>
+                <option value="washing">Washing</option>
+                <option value="printing">Printing</option>
+                <option value="finishing">Finishing</option>
+            </select>
+            <button onclick="submitData()">Submit</button>
+            <button onclick="logout()">Logout</button>
+        </div>
+    </div>
+
+    <script>
+        let currentUser = null;
+        let projectData = {};
+        let supplierData = {};
+
+        function login() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            
+            if (username === 'admin' && password === 'admin123') {
+                currentUser = 'admin';
+                showInterface('adminInterface');
+                displayAllData();
+            } else if (['supplier1', 'supplier2', 'supplier3'].includes(username) && password === 'supplier123') {
+                currentUser = username;
+                showInterface('supplierInterface');
+                loadProjects();
+            } else {
+                alert('Invalid credentials');
+            }
+        }
+
+        function logout() {
+            currentUser = null;
+            showInterface('loginForm');
+        }
+
+        function showInterface(interfaceId) {
+            document.getElementById('loginForm').style.display = 'none';
+            document.getElementById('adminInterface').style.display = 'none';
+            document.getElementById('supplierInterface').style.display = 'none';
+            document.getElementById(interfaceId).style.display = 'block';
+        }
+
+        function assignProject() {
+            const supplier = document.getElementById('adminSupplierSelect').value;
+            const projectNumber = document.getElementById('projectNumber').value;
+            if (!projectData[supplier]) projectData[supplier] = [];
+            projectData[supplier].push(projectNumber);
+            alert(`Project ${projectNumber} assigned to ${supplier}`);
+            displayAllData();
+        }
+
+        function loadProjects() {
+            const select = document.getElementById('projectSelect');
+            select.innerHTML = '';
+            if (projectData[currentUser]) {
+                projectData[currentUser].forEach(project => {
+                    const option = document.createElement('option');
+                    option.value = project;
+                    option.textContent = project;
+                    select.appendChild(option);
+                });
+            }
+        }
+
+        function submitData() {
+            const project = document.getElementById('projectSelect').value;
+            const wpu = document.getElementById('wpu').value;
+            const processSteps = Array.from(document.getElementById('processSteps').selectedOptions).map(option => option.value);
+            
+            if (!supplierData[currentUser]) supplierData[currentUser] = {};
+            supplierData[currentUser][project] = { wpu, processSteps };
+            
+            alert(`Data submitted for project ${project}`);
+            displayAllData();
+        }
+
+        function displayAllData() {
+            if (currentUser !== 'admin') return;
+
+            let html = '<table><tr><th>Supplier</th><th>Project</th><th>WPU</th><th>Process Steps</th></tr>';
+            
+            for (let supplier in supplierData) {
+                for (let project in supplierData[supplier]) {
+                    const data = supplierData[supplier][project];
+                    html += `<tr>
+                        <td>${supplier}</td>
+                        <td>${project}</td>
+                        <td>${data.wpu}</td>
+                        <td>${data.processSteps.join(', ')}</td>
+                    </tr>`;
+                }
+            }
+            
+            html += '</table>';
+            document.getElementById('allData').innerHTML = html;
+        }
+
+        function downloadData() {
+            let csv = 'Supplier,Project,WPU,Process Steps\n';
+            
+            for (let supplier in supplierData) {
+                for (let project in supplierData[supplier]) {
+                    const data = supplierData[supplier][project];
+                    csv += `${supplier},${project},${data.wpu},"${data.processSteps.join(', ')}"\n`;
+                }
+            }
+            
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement("a");
+            if (link.download !== undefined) {
+                const url = URL.createObjectURL(blob);
+                link.setAttribute("href", url);
+                link.setAttribute("download", "supplier_data.csv");
+                link.style.visibility = 'hidden';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }
+        }
+
+        function clearData() {
+            const supplier = document.getElementById('adminSupplierSelect').value;
+            delete projectData[supplier];
+            delete supplierData[supplier];
+            alert(`Data cleared for ${supplier}`);
+            displayAllData();
+        }
+    </script>
+</body>
+</html>

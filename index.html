@@ -12,7 +12,7 @@
         button { background: #c0a468; color: #fff; border: none; cursor: pointer; }
         button:hover { background: #edd38e; }
         #adminInterface, #supplierInterface { display: none; }
-        table { width: 100%; border-collapse: collapse; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
         th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
         th { background-color: #f2f2f2; }
     </style>
@@ -40,7 +40,6 @@
             <button onclick="downloadData()">Download Data</button>
             <button onclick="clearData()">Clear Data</button>
             <button onclick="logout()">Logout</button>
-            <h3>All Data</h3>
             <div id="allData"></div>
         </div>
 
@@ -60,8 +59,9 @@
     </div>
 
     <script>
-        const API_KEY = $2a$10$y18/2eS7AOLyfMUSvOIxeeR308qV4wEVgRhg0L1JETHB4oXpTOz8W;
-        const BIN_ID = 6799fd14acd3cb34a8d4ccc4;
+        const API_KEY = '$2a$10$y18/2eS7AOLyfMUSvOIxeeR308qV4wEVgRhg0L1JETHB4oXpTOz8W';
+        const BIN_ID = '6799fd14acd3cb34a8d4ccc4';
+
         let currentUser = null;
         let allData = { projectData: {}, supplierData: {} };
 
@@ -108,7 +108,8 @@
                 } else {
                     loadProjects();
                 }
-            });
+            })
+            .catch(error => console.error('Error:', error));
         }
 
         function saveData() {
@@ -119,7 +120,10 @@
                     'X-Master-Key': API_KEY
                 },
                 body: JSON.stringify(allData)
-            });
+            })
+            .then(response => response.json())
+            .then(result => console.log('Data saved:', result))
+            .catch(error => console.error('Error:', error));
         }
 
         function assignProject() {

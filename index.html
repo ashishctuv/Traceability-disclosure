@@ -61,7 +61,7 @@
 
     <script>
         const API_KEY = $2a$10$y18/2eS7AOLyfMUSvOIxeeR308qV4wEVgRhg0L1JETHB4oXpTOz8W
-        const BIN_ID = 6799f749e41b4d34e4809059
+        const BIN_ID = 6799fd14acd3cb34a8d4ccc4
         let currentUser = null;
         let allData = { projectData: {}, supplierData: {} };
 
@@ -97,7 +97,7 @@
         function loadData() {
             fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}/latest`, {
                 headers: {
-                    'X-Master-Key': API_KEY
+                    'X-Master-Key': $2a$10$y18/2eS7AOLyfMUSvOIxeeR308qV4wEVgRhg0L1JETHB4oXpTOz8W
                 }
             })
             .then(response => response.json())
@@ -112,11 +112,11 @@
         }
 
         function saveData() {
-            fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}`, {
+            fetch(`https://api.jsonbin.io/v3/b/${6799fd14acd3cb34a8d4ccc4}`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-Master-Key': API_KEY
+                    'X-Master-Key': $2a$10$y18/2eS7AOLyfMUSvOIxeeR308qV4wEVgRhg0L1JETHB4oXpTOz8W
                 },
                 body: JSON.stringify(allData)
             });
